@@ -19,37 +19,35 @@ router.post("/login",(req,res)=>{
 });
 
 const verifyAccessToken = (req, res, next) => {
-    const accessToken = req.headers.authorization;
-    const refreshToken = req.headers.refreshToken;
-  
-    if (!accessToken && !refreshToken) {
-      return res.status(401).json({ message: 'Access token and refresh token missing' });
-    }
-  
-    try {
-      const decoded = jwt.verify(accessToken, secretKey);
-      // Access token is valid, proceed to the next middleware or route handler
-      req.userId = decoded.userId;
-      next();
-    } catch (accessTokenError) {
-      if (accessTokenError.name === 'TokenExpiredError' && refreshToken) {
-        try {
-          const decodedRefreshToken = jwt.verify(refreshToken, refreshkey);
-          // Refresh token is valid, generate a new access token
-          const newAccessToken = jwt.sign({ userId: decodedRefreshToken.userId }, secretKey, { expiresIn: '15m' });
-          req.userId = decodedRefreshToken.userId;
-          res.set('Authorization', newAccessToken);
-          next();
-        } catch (refreshTokenError) {
-          return res.status(401).json({ message: 'Invalid refresh token' });
-        }
-      } else {
-        return res.status(401).json({ message: 'Invalid access token' });
+  const accessToken = req.headers.authorization;
+  const refreshToken = req.headers.refreshToken;
+
+  if (!accessToken && !refreshToken) {
+    return res.status(401).json({ message: 'Access token and refresh token missing' });
+  }
+
+  try {
+    const decoded = jwt.verify(accessToken, secretKey);
+    // Access token is valid, proceed to the next middleware or route handler
+    req.userId = decoded.userId;
+    next();
+  } catch (accessTokenError) {
+    if (accessTokenError.name === 'TokenExpiredError' && refreshToken) {
+      try {
+        const decodedRefreshToken = jwt.verify(refreshToken, refreshKey);
+        // Refresh token is valid, generate a new access token
+        const newAccessToken = jwt.sign({ userId: decodedRefreshToken.userId }, secretKey, { expiresIn: '15m' });
+        req.userId = decodedRefreshToken.userId;
+        res.set('Authorization', newAccessToken);
+        next();
+      } catch (refreshTokenError) {
+        return res.status(401).json({ message: 'Invalid refresh token' });
       }
+    } else {
+      return res.status(401).json({ message: 'Invalid access token' });
     }
-    console.log('Secret Key:', secretKey);
-console.log('Refresh Key:', refreshkey);
-  };
+  }
+};
   // All CRUD operations
 router.post("/api/create",verifyAccessToken, (req,res)=>{
    
